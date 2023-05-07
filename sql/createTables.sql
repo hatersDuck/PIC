@@ -14,7 +14,7 @@ CREATE TABLE historyData (
   high_price DECIMAL(18,8) NOT NULL,
   low_price DECIMAL(18,8) NOT NULL,
   close_price DECIMAL(18,8) NOT NULL,
-  interval CHAR(2) NOT NULL DEFAULT '1m'
+  interval CHAR(3) NOT NULL DEFAULT '1m'
 );
 
 CREATE TABLE users (
