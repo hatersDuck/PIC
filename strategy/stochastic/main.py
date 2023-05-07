@@ -12,8 +12,7 @@ import sys
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(path)
 
-from apps.binance_c.module_analData import Analysis
-import random
+from strategy.module_analData import Analysis
 
 cfg = [
 
