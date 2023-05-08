@@ -19,10 +19,12 @@ CREATE TABLE historyData (
 
 CREATE TABLE users (
   user_id BIGSERIAL PRIMARY KEY,
-  api_key CHAR(64) NOT NULL,
-  secret_key CHAR(64) NOT NULL,
+  api_key CHAR(64) DEFAULT 'empty',
+  secret_key CHAR(64) DEFAULT 'empty',
   strategy_id SERIAL NOT NULL REFERENCES tradeStrategy(strategy_id) ON UPDATE CASCADE ON DELETE SET DEFAULT,
-  username CHAR(32) NOT NULL DEFAULT 'no'
+  status_trade CHAR(1) NOT NULL DEFAULT 'N',
+  username CHAR(32) NOT NULL DEFAULT 'no',
+  state_in_bot char(2) NOT NULL DEFAULT 'no'
 );
 
 CREATE TABLE orders (

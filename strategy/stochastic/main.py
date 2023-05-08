@@ -15,7 +15,6 @@ sys.path.append(path)
 from strategy.module_analData import Analysis
 
 cfg = [
-
     {
         'interval': '1m',
         'stochastic_k': 5,
