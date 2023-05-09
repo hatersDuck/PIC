@@ -60,11 +60,11 @@ if __name__ == "__main__":
             skip += 1
     
     if buy > sell and buy > skip:
-        print("BUY")
+        print("BUY", end="")
     elif buy < sell and sell > skip:
-        print("SELL")
+        print("SELL", end="")
     else:
-        print("SKIP")
+        print("SKIP", end="")
     
         
 

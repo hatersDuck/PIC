@@ -86,7 +86,7 @@ func (b *Bot) cbChangeStrategy(del *tgbotapi.DeleteMessageConfig, strategyId int
 
 	rows, err := b.db.Query("SELECT strategy_id, title FROM tradestrategy WHERE status='active' LIMIT $1", countRows)
 	if err != nil {
-		log.Println("Ошибка запроса стратегий")
+		log.Println("Ошибка запроса стратегий", err)
 		return nil, false
 	}
 	buttons := make([][]tgbotapi.InlineKeyboardButton, 0, countRows+2)
@@ -123,7 +123,7 @@ func (b *Bot) cbApiKeyEmpty(del *tgbotapi.DeleteMessageConfig) tgbotapi.Chattabl
 }
 
 func (b *Bot) cbSecretKeyEmpty(del *tgbotapi.DeleteMessageConfig) tgbotapi.Chattable {
-	update_msg := tgbotapi.NewEditMessageText(del.ChatID, del.MessageID, b.messages.AddApi)
+	update_msg := tgbotapi.NewEditMessageText(del.ChatID, del.MessageID, b.messages.AddSecret)
 	b.db.Exec("UPDATE users SET state_in_bot = 'se' WHERE user_id = $1", del.ChatID)
 	return update_msg
 }

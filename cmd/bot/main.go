@@ -8,6 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/hatersDuck/PIC/config"
 	"github.com/hatersDuck/PIC/pkg/telegram"
+	"github.com/hatersDuck/PIC/pkg/trade"
 	"github.com/jackc/pgx"
 )
 
@@ -28,17 +29,38 @@ func main() {
 		Password: cfg.DatabasePassword,
 		User:     "danila",
 	})
-
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
 	}
-	defer conn.Close()
+	connTrade, err := pgx.Connect(pgx.ConnConfig{
+		Database: "pic",
+		Password: cfg.DbPasswordTrade,
+		User:     "trade_binance",
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
 
-	func() {
+	defer conn.Close()
+	defer connTrade.Close()
+
+	errChan := make(chan error)
+	trade := *trade.NewTrade(cfg.TimeSleep, cfg.TestNet, connTrade)
+	go trade.Start(errChan)
+
+	go func() {
 		if err := telegram.NewBot(bot, cfg.Messages, conn).Start(); err != nil {
 			log.Fatal(err)
 		}
 	}()
+
+	for {
+		select {
+		case err := <-errChan:
+			log.Printf("Error: %v", err)
+		}
+	}
 
 }

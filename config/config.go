@@ -8,6 +8,10 @@ type Config struct {
 	TelegramToken    string
 	Messages         Messages
 	DatabasePassword string
+	DbPasswordTrade  string
+
+	TimeSleep int
+	TestNet   bool
 }
 
 type Messages struct {
@@ -82,6 +86,13 @@ func Init() (*Config, error) {
 		return nil, err
 	}
 
+	if err := viper.UnmarshalKey("time_sleep", &cfg.TimeSleep); err != nil {
+		return nil, err
+	}
+	if err := viper.UnmarshalKey("test_net", &cfg.TestNet); err != nil {
+		return nil, err
+	}
+
 	if err := ParseEnv(&cfg); err != nil {
 		return nil, err
 	}
@@ -96,5 +107,6 @@ func ParseEnv(cfg *Config) error {
 	}
 	cfg.TelegramToken = viper.GetString("BOT_TOKEN")
 	cfg.DatabasePassword = viper.GetString("PASSWORD_DB")
+	cfg.DbPasswordTrade = viper.GetString("PASSWORD_DB_TRADE")
 	return nil
 }

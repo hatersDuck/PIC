@@ -11,15 +11,11 @@ type (
 		Symbol string `db:"symbol"`
 	}
 
-	historyData struct {
-		Id         int       `db:"history_id"`
-		Date       time.Time `db:"date"`
-		Symbol     string    `db:"symbol"`
-		OpenPrice  float32   `db:"opne_price"`
-		HighPrice  float32   `db:"high_price"`
-		LowPrice   float32   `db:"low_price"`
-		ClosePrice float32   `db:"close_price"`
-		Interval   string    `db:"interval"`
+	HistoryData struct {
+		Id     int       `db:"history_id"`
+		Date   time.Time `db:"date"`
+		Symbol string    `db:"symbol"`
+		Price  float32   `db:"price"`
 	}
 
 	User struct {

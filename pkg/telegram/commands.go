@@ -29,6 +29,8 @@ func (b *Bot) accountCommand(chat_id int64, user tgbotapi.User) {
 			}
 		}
 		userRow.Status = 'N'
+		userRow.ApiKey = "empty" + strings.Repeat(" ", 59)
+		userRow.SecretKey = "empty" + strings.Repeat(" ", 59)
 	}
 	if userRow.StateInBot != "no" {
 		b.db.Exec("UPDATE users SET state_in_bot = 'no' WHERE user_id = $1", user.ID)
