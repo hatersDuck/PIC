@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -18,7 +19,7 @@ func (b *Bot) accountCommand(chat_id int64, user tgbotapi.User) {
 	userRow := &database.User{}
 	row := b.db.QueryRow("SELECT * FROM users WHERE user_id = $1", user.ID)
 
-	err := row.Scan(&userRow.Id, &userRow.ApiKey, &userRow.SecretKey, &userRow.StrategyId, &userRow.Status, &userRow.Username, &userRow.StateInBot)
+	err := row.Scan(&userRow.Id, &userRow.ApiKey, &userRow.SecretKey, &userRow.StrategyId, &userRow.Status, &userRow.Username, &userRow.StateInBot, &userRow.Succes)
 
 	if err != nil {
 		log.Println("New user ", user.ID, err)
@@ -41,10 +42,13 @@ func (b *Bot) accountCommand(chat_id int64, user tgbotapi.User) {
 }
 
 func (b *Bot) createAccount(chat_id int64, user *database.User) tgbotapi.MessageConfig {
-	message := tgbotapi.NewMessage(chat_id, b.messages.Account)
 	buttons := make([][]tgbotapi.InlineKeyboardButton, 0, 3)
 
 	emptyStr := "empty" + strings.Repeat(" ", 59)
+	msgTex := b.messages.Account
+	msgWar := b.messages.Warnings
+	status := b.messages.OffTrade
+	no_api_keys := b.messages.NoApiKeys
 
 	if user.Status == 'N' {
 		buttons = append(buttons, tgbotapi.NewInlineKeyboardRow(
@@ -57,6 +61,7 @@ func (b *Bot) createAccount(chat_id int64, user *database.User) tgbotapi.Message
 			tgbotapi.NewInlineKeyboardButtonData(b.messages.BtnChangeStrategy, "change_strategy"),
 		))
 	}
+
 	if user.ApiKey == emptyStr && user.SecretKey == emptyStr {
 		buttons = append(buttons, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(b.messages.BtnApiKeyEmpty, "api_key_empty"),
@@ -77,11 +82,28 @@ func (b *Bot) createAccount(chat_id int64, user *database.User) tgbotapi.Message
 			tgbotapi.NewInlineKeyboardButtonData(b.messages.BtnApiKeyReady, "api_key_ready"),
 			tgbotapi.NewInlineKeyboardButtonData(b.messages.BtnSecretKeyReady, "secret_key_ready"),
 		))
+		if user.Status == 'Y' && user.Succes {
+			status = b.messages.OnTrade
+		}
+
+		if !user.Succes {
+			msgWar = fmt.Sprintf(msgWar, b.messages.NoSuccess)
+		}
+		no_api_keys = ""
+
 	}
 	buttons = append(buttons, tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(b.messages.BtnReport, "report"),
 	))
-	message.ReplyMarkup = &tgbotapi.InlineKeyboardMarkup{InlineKeyboard: buttons}
 
+	if msgWar == b.messages.Warnings && no_api_keys != "" {
+		msgWar = fmt.Sprintf(msgWar, no_api_keys)
+	} else if msgWar == b.messages.Warnings {
+		msgWar = ""
+	}
+	log.Println(msgWar)
+	message := tgbotapi.NewMessage(chat_id, fmt.Sprintf(msgTex, status)+msgWar)
+	message.ReplyMarkup = &tgbotapi.InlineKeyboardMarkup{InlineKeyboard: buttons}
+	message.ParseMode = "Markdown"
 	return message
 }

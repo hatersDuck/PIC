@@ -30,6 +30,12 @@ type Responses struct {
 	DeleteKey      string `mapstructure:"delete_key"`
 	Report         string `mapstructure:"report"`
 	ChangeStrategy string `mapstructure:"change_strategy"`
+	OnTrade        string `mapstructure:"on_trade"`
+	OffTrade       string `mapstructure:"off_trade"`
+
+	Warnings  string `mapstructure:"warnings"`
+	NoApiKeys string `mapstructure:"no_api_keys"`
+	NoSuccess string `mapstructure:"no_success"`
 }
 
 type Errors struct {

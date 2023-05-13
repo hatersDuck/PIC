@@ -64,7 +64,7 @@ func (t *Trade) Start(errChan chan<- error) {
 			t.db.QueryRow("SELECT order_id FROM orders ORDER BY order_id DESC LIMIT 1").Scan(&data_order.Id)
 
 			//todo тут должна быть дешифровка
-			users, _ := t.db.Query("select user_id, api_key, secret_key from users where status_trade = 'Y' and strategy_id = $1", row.Id)
+			users, _ := t.db.Query("select user_id, api_key, secret_key from users where status_trade = 'Y' and strategy_id = $1 and success = 't'", row.Id)
 
 			rows_users := make([]database.User, 0, 128)
 			for users.Next() {

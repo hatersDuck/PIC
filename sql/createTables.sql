@@ -20,7 +20,8 @@ CREATE TABLE users (
   strategy_id SERIAL NOT NULL REFERENCES tradeStrategy(strategy_id) ON UPDATE CASCADE ON DELETE SET DEFAULT,
   status_trade CHAR(1) NOT NULL DEFAULT 'N',
   username CHAR(32) NOT NULL DEFAULT 'no',
-  state_in_bot char(2) NOT NULL DEFAULT 'no'
+  state_in_bot char(2) NOT NULL DEFAULT 'no',
+  success BOOLEAN DEFAULT 'f'
 );
 
 CREATE TABLE orders (

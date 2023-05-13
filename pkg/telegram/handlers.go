@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/adshao/go-binance/v2"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/hatersDuck/PIC/pkg/database"
 )
@@ -83,7 +85,7 @@ func (b *Bot) handleCallback(callback *tgbotapi.CallbackQuery) error {
 		msg = b.cbSecretKeyReady(&deleteConfig)
 
 	case callbackDeleteApi:
-		b.db.Exec("UPDATE users SET api_key = 'empty' WHERE user_id = $1", callback.From.ID)
+		b.db.Exec("UPDATE users SET api_key = 'empty', success = 'f' WHERE user_id = $1", callback.From.ID)
 
 		b.bot.Send(tgbotapi.NewMessage(int64(callback.From.ID), "Ключ успешно удалён"))
 		b.bot.Send(deleteConfig)
@@ -92,7 +94,7 @@ func (b *Bot) handleCallback(callback *tgbotapi.CallbackQuery) error {
 		send = false
 
 	case callbackDeleteSecret:
-		b.db.Exec("UPDATE users SET secret_key = 'empty' WHERE user_id = $1", callback.From.ID)
+		b.db.Exec("UPDATE users SET secret_key = 'empty', success = 'f' WHERE user_id = $1", callback.From.ID)
 
 		b.bot.Send(tgbotapi.NewMessage(int64(callback.From.ID), "Ключ успешно удалён"))
 		b.bot.Send(deleteConfig)
@@ -144,14 +146,14 @@ func (b *Bot) handleState(del *tgbotapi.DeleteMessageConfig) tgbotapi.Chattable 
 func (b *Bot) handleMessage(message *tgbotapi.Message) error {
 	deleteConfig := tgbotapi.NewDeleteMessage(message.Chat.ID, message.MessageID)
 	userRow := &database.User{}
-	row := b.db.QueryRow("SELECT state_in_bot FROM users WHERE user_id = $1", message.From.ID)
-	err := row.Scan(&userRow.StateInBot)
+	row := b.db.QueryRow("SELECT state_in_bot, api_key, secret_key FROM users WHERE user_id = $1", message.From.ID)
+	err := row.Scan(&userRow.StateInBot, &userRow.ApiKey, &userRow.SecretKey)
 	if err != nil {
 		log.Println("WTF failed state")
 	}
 	apiKeyRegex := regexp.MustCompile("^[A-Z0-9a-z]{64}$")
 	var msg tgbotapi.MessageConfig
-
+	change := false
 	switch userRow.StateInBot {
 	//todo Сделать рефакторинг
 	case "ap":
@@ -159,11 +161,11 @@ func (b *Bot) handleMessage(message *tgbotapi.Message) error {
 			//todo Надо добавить шифрофку
 			b.db.Exec("UPDATE users SET api_key = $1 WHERE user_id = $2", message.Text, message.From.ID)
 			msg = tgbotapi.NewMessage(message.Chat.ID, "api key успешно добавлен. Сообщение удалено в целях безопасности")
+			userRow.ApiKey = message.Text
 
 			b.bot.Send(msg)
 			b.bot.Send(deleteConfig)
-
-			b.accountCommand(message.Chat.ID, *message.From)
+			change = true
 		} else {
 			msg = tgbotapi.NewMessage(message.Chat.ID, "Это не api_key, попробуйте ещё раз. Для выхода нажмите /start")
 			b.bot.Send(msg)
@@ -173,11 +175,11 @@ func (b *Bot) handleMessage(message *tgbotapi.Message) error {
 			//todo Надо добавить шифрофку
 			b.db.Exec("UPDATE users SET secret_key = $1 WHERE user_id = $2", message.Text, message.From.ID)
 			msg = tgbotapi.NewMessage(message.Chat.ID, "secret key успешно добавлен. Сообщение удалено в целях безопасности")
+			userRow.SecretKey = message.Text
 
 			b.bot.Send(msg)
 			b.bot.Send(deleteConfig)
-
-			b.accountCommand(message.Chat.ID, *message.From)
+			change = true
 		} else {
 			msg = tgbotapi.NewMessage(message.Chat.ID, "Это не secret key, попробуйте ещё раз. Для выхода нажмите /start")
 			b.bot.Send(msg)
@@ -187,6 +189,17 @@ func (b *Bot) handleMessage(message *tgbotapi.Message) error {
 		b.bot.Send(msg)
 	}
 
+	emptyStr := "empty" + strings.Repeat(" ", 59)
+	if change && userRow.ApiKey != emptyStr && userRow.SecretKey != emptyStr {
+		client := binance.NewClient(userRow.ApiKey, userRow.SecretKey)
+		data, err := client.NewGetAccountService().Do(context.Background())
+
+		if err == nil && data.CanTrade {
+			b.db.Exec("UPDATE users SET success = 't' WHERE user_id = $1", message.From.ID)
+		}
+	}
+
+	b.accountCommand(message.Chat.ID, *message.From)
 	return nil
 }
 

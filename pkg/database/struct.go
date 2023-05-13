@@ -26,6 +26,7 @@ type (
 		Status     rune   `db:"status_trade"`
 		Username   string `db:"username"`
 		StateInBot string `db:"state_in_bot"`
+		Succes     bool   `db:"succes"`
 	}
 
 	Orders struct {
